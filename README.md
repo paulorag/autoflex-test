@@ -9,20 +9,29 @@
 
 ---
 
+## 🚀 Live Demo (Production)
+
+- **Frontend (Application):** https://autoflex-test.vercel.app/
+- **Backend (API):** https://autoflex-api-hdo2.onrender.com
+
+_Note: The backend is hosted on a free tier service (Render). The first request may take up to 50 seconds to wake up the server._
+
+---
+
 ## 🇺🇸 About the Project
 
 This Full Stack solution was developed to manage a production line, handling **Raw Materials**, **Products** (with dynamic recipes/bills of materials), and **Production Planning**.
 
 The system automates the calculation of production capacity based on current stock levels and prioritizes products with higher sales value, adhering to **Clean Architecture** and **SOLID** principles.
 
-### 🚀 Tech Stack
+### 🛠️ Tech Stack
 
-- **Backend:** Java 21, Spring Boot 3, JPA/Hibernate, H2 Database, JUnit 5.
+- **Backend:** Java 21, Spring Boot 3, JPA/Hibernate, PostgreSQL (Neon Serverless), JUnit 5.
 - **Frontend:** React (Vite), TypeScript, Bootstrap 5, Axios.
 - **Quality Assurance:**
     - **JUnit & Mockito:** Unit testing for Business Logic (Production Service).
     - **Cypress:** End-to-End (E2E) testing for critical user flows.
-- **DevOps:** Docker & Docker Compose.
+- **DevOps & Cloud:** Docker, Docker Compose, Vercel (Front) & Render (Back).
 
 ### ✨ Key Features
 
@@ -35,7 +44,7 @@ The system automates the calculation of production capacity based on current sto
     - **Smart Prioritization:** Prioritizes products with higher sales value (Business Rule).
 4.  **UX/UI:** Modern interface with feedback toasts, modals, and responsive design.
 
-### 📦 How to Run
+### 📦 How to Run Locally
 
 #### Option 1: Via Docker (Recommended) 🐳
 
@@ -68,18 +77,27 @@ The system automates the calculation of production capacity based on current sto
 
 ## 🇧🇷 Sobre o Projeto (Versão em Português)
 
+### 🚀 Demonstração (Ao Vivo)
+
+- **Frontend (Aplicação):** https://autoflex-test.vercel.app/
+- **Backend (API):** https://autoflex-api-hdo2.onrender.com
+
+_Nota: O backend está hospedado em um serviço gratuito (Render). A primeira requisição pode levar até 50 segundos para "acordar" o servidor._
+
+---
+
 Esta solução Full Stack foi desenvolvida para o gerenciamento de linha de produção, permitindo o cadastro de **Matérias-Primas**, **Produtos** (com receitas dinâmicas) e **Planejamento de Produção**.
 
 O sistema automatiza o cálculo da capacidade produtiva baseada no estoque atual e prioriza produtos com maior valor de venda, seguindo princípios de **Clean Architecture** e **SOLID**.
 
-### 🚀 Tecnologias Utilizadas
+### 🛠️ Tecnologias Utilizadas
 
-- **Backend:** Java 21, Spring Boot 3, JPA/Hibernate, Banco H2, JUnit 5.
+- **Backend:** Java 21, Spring Boot 3, JPA/Hibernate, PostgreSQL (Neon Serverless), JUnit 5.
 - **Frontend:** React (Vite), TypeScript, Bootstrap 5, Axios.
 - **Qualidade (QA):**
     - **JUnit & Mockito:** Testes unitários para Regra de Negócio (Service).
     - **Cypress:** Testes Ponta-a-Ponta (E2E) para fluxos críticos.
-- **DevOps:** Docker & Docker Compose.
+- **DevOps & Cloud:** Docker, Docker Compose, Vercel (Front) e Render (Back).
 
 ### ✨ Funcionalidades Principais
 
@@ -92,7 +110,7 @@ O sistema automatiza o cálculo da capacidade produtiva baseada no estoque atual
     - **Priorização Inteligente:** O sistema prioriza a fabricação de produtos com maior valor de venda.
 4.  **UX/UI:** Interface moderna com feedbacks visuais e design responsivo.
 
-### 📦 Como Rodar
+### 📦 Como Rodar Localmente
 
 #### Opção 1: Via Docker (Recomendado) 🐳
 
