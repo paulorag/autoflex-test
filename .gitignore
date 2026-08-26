@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Documentation & Task tracking ###
+CONTEXT.md
+TODO.md

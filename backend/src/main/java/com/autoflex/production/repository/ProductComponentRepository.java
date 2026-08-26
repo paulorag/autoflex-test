@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ProductComponentRepository extends JpaRepository<ProductComponent, Long> {
+    boolean existsByRawMaterialId(Long rawMaterialId);
 }

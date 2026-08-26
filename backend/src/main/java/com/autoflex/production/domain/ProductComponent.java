@@ -1,10 +1,15 @@
 package com.autoflex.production.domain;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(of = "id")
+@ToString(exclude = "product")
 @Entity
 @Table(name = "product_components")
 public class ProductComponent {
@@ -13,15 +18,14 @@ public class ProductComponent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne
-    @JoinColumn(name = "raw_material_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "raw_material_id", nullable = false)
     private RawMaterial rawMaterial;
 
-    @Column(nullable = false)
+    @Column(name = "quantity_required", nullable = false)
     private Integer quantityRequired;
 }

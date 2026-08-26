@@ -1,7 +1,9 @@
 package com.autoflex.production.controller;
 
-import com.autoflex.production.domain.Product;
+import com.autoflex.production.dto.request.ProductRequestDTO;
+import com.autoflex.production.dto.response.ProductResponseDTO;
 import com.autoflex.production.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,46 +13,37 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService service;
 
     @GetMapping
-    public List<Product> listAll() {
-        return service.findAll();
+    public ResponseEntity<List<ProductResponseDTO>> listAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> findById(@PathVariable Long id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ProductResponseDTO> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Product create(@RequestBody Product product) {
-        return service.save(product);
+    public ResponseEntity<ProductResponseDTO> create(@Valid @RequestBody ProductRequestDTO requestDTO) {
+        ProductResponseDTO created = service.create(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
-        product.setId(id);
-
-        if (product.getComponents() != null) {
-            product.getComponents().forEach(component -> component.setProduct(product));
-        }
-
-        Product savedProduct = service.save(product);
-
-        return ResponseEntity.ok(savedProduct);
+    public ResponseEntity<ProductResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequestDTO requestDTO) {
+        return ResponseEntity.ok(service.update(id, requestDTO));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,7 +1,9 @@
 package com.autoflex.production.controller;
 
-import com.autoflex.production.domain.RawMaterial;
+import com.autoflex.production.dto.request.RawMaterialRequestDTO;
+import com.autoflex.production.dto.response.RawMaterialResponseDTO;
 import com.autoflex.production.service.RawMaterialService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,39 +13,37 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/raw-materials")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class RawMaterialController {
 
     private final RawMaterialService service;
 
     @GetMapping
-    public List<RawMaterial> listAll() {
-        return service.findAll();
+    public ResponseEntity<List<RawMaterialResponseDTO>> listAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<RawMaterial> findById(@PathVariable Long id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<RawMaterialResponseDTO> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public RawMaterial create(@RequestBody RawMaterial rawMaterial) {
-        return service.save(rawMaterial);
+    public ResponseEntity<RawMaterialResponseDTO> create(@Valid @RequestBody RawMaterialRequestDTO requestDTO) {
+        RawMaterialResponseDTO created = service.create(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public RawMaterial update(@PathVariable Long id, @RequestBody RawMaterial rawMaterial) {
-        rawMaterial.setId(id);
-        return service.save(rawMaterial);
+    public ResponseEntity<RawMaterialResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody RawMaterialRequestDTO requestDTO) {
+        return ResponseEntity.ok(service.update(id, requestDTO));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
