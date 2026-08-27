@@ -3,6 +3,10 @@ package com.autoflex.production.controller;
 import com.autoflex.production.dto.ProductionPlanDTO;
 import com.autoflex.production.dto.response.ProductionOrderResponseDTO;
 import com.autoflex.production.service.ProductionPlanningService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Planejamento PCP", description = "Endpoints para cálculo de capacidade de produção otimizada e efetivação no chão de fábrica")
 @RestController
 @RequestMapping("/api/production-planning")
 @RequiredArgsConstructor
@@ -20,11 +25,18 @@ public class ProductionPlanningController {
 
     private final ProductionPlanningService service;
 
+    @Operation(summary = "Calcular plano ótimo de produção", description = "Executa o algoritmo guloso de otimização de faturamento com base no saldo atual de matérias-primas.")
+    @ApiResponse(responseCode = "200", description = "Plano de produção calculado com sucesso")
     @GetMapping
     public ResponseEntity<List<ProductionPlanDTO>> getProductionPlan() {
         return ResponseEntity.ok(service.calculateProductionPlan());
     }
 
+    @Operation(summary = "Efetivar ordem de produção", description = "Efetiva a fabricação do plano ótimo, debita atomicamente as matérias-primas do estoque e gera o registro histórico da ordem.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Ordem de produção executada e estoque debitado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Estoque insuficiente para produzir qualquer item")
+    })
     @PostMapping("/execute")
     public ResponseEntity<ProductionOrderResponseDTO> executeProductionPlan() {
         ProductionOrderResponseDTO executedOrder = service.executeProductionPlan();
