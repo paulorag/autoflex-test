@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import { Table, Container, Alert, Spinner, Button, Card, Badge } from "react-bootstrap";
+import { Table, Alert, Spinner, Button, Row, Col, Form } from "react-bootstrap";
+import { Plus, Search, Pencil, Trash2, Boxes, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { rawMaterialService } from "../services/rawMaterialService";
-import { type RawMaterial } from "../types";
+import type { RawMaterial } from "../types";
 import { RawMaterialFormModal } from "../components/RawMaterialFormModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 
 export function RawMaterialsPage() {
     const [materials, setMaterials] = useState<RawMaterial[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -55,102 +57,188 @@ export function RawMaterialsPage() {
         }
     };
 
-    const handleEdit = (material: RawMaterial) => {
-        setEditingMaterial(material);
-        setShowFormModal(true);
-    };
+    const filteredMaterials = materials.filter((m) =>
+        m.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    const handleCreate = () => {
-        setEditingMaterial(null);
-        setShowFormModal(true);
-    };
+    const totalStockQuantity = materials.reduce((acc, m) => acc + m.stockQuantity, 0);
+    const zeroStockCount = materials.filter((m) => m.stockQuantity === 0).length;
 
     return (
-        <Container className="py-2">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 className="mb-1">📦 Estoque de Matérias-Primas</h2>
-                    <p className="text-muted mb-0">Gerencie o inventário físico de insumos para a produção.</p>
-                </div>
-                <Button variant="primary" onClick={handleCreate} className="fw-semibold shadow-sm">
-                    + Nova Matéria-Prima
-                </Button>
-            </div>
-
+        <div className="page-container">
             {error && (
-                <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                    {error}
+                <Alert variant="danger" dismissible onClose={() => setError(null)} className="shadow-sm border-0 d-flex align-items-center gap-2 mb-4">
+                    <AlertTriangle size={20} />
+                    <span>{error}</span>
                 </Alert>
             )}
 
             {successMessage && (
-                <Alert variant="success" dismissible onClose={() => setSuccessMessage(null)}>
-                    {successMessage}
+                <Alert variant="success" dismissible onClose={() => setSuccessMessage(null)} className="shadow-sm border-0 d-flex align-items-center gap-2 mb-4">
+                    <CheckCircle2 size={20} />
+                    <span>{successMessage}</span>
                 </Alert>
             )}
 
-            {loading ? (
-                <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" />
-                    <p className="mt-2 text-muted">Carregando insumos...</p>
+            {/* Quick Metrics */}
+            <Row className="g-4 mb-4">
+                <Col md={4}>
+                    <div className="kpi-card">
+                        <div className="kpi-icon-box blue">
+                            <Boxes size={24} />
+                        </div>
+                        <div className="kpi-content">
+                            <div className="kpi-label">Tipos de Insumos</div>
+                            <div className="kpi-value">{materials.length} cadastrados</div>
+                        </div>
+                    </div>
+                </Col>
+                <Col md={4}>
+                    <div className="kpi-card">
+                        <div className="kpi-icon-box green">
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <div className="kpi-content">
+                            <div className="kpi-label">Volume Total Físico</div>
+                            <div className="kpi-value text-success">{totalStockQuantity} unidades</div>
+                        </div>
+                    </div>
+                </Col>
+                <Col md={4}>
+                    <div className="kpi-card">
+                        <div className="kpi-icon-box rose">
+                            <AlertTriangle size={24} />
+                        </div>
+                        <div className="kpi-content">
+                            <div className="kpi-label">Itens com Estoque Zerado</div>
+                            <div className="kpi-value text-danger">{zeroStockCount} insumos</div>
+                        </div>
+                    </div>
+                </Col>
+            </Row>
+
+            {/* Main Table Card */}
+            <div className="custom-card">
+                <div className="custom-card-header flex-wrap gap-3">
+                    <div className="search-input-wrapper">
+                        <Search size={16} className="search-input-icon" />
+                        <Form.Control
+                            type="text"
+                            placeholder="Buscar matéria-prima por nome..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <Button
+                        className="btn-modern-primary"
+                        onClick={() => {
+                            setEditingMaterial(null);
+                            setShowFormModal(true);
+                        }}
+                    >
+                        <Plus size={18} /> Nova Matéria-Prima
+                    </Button>
                 </div>
-            ) : materials.length === 0 ? (
-                <Card className="text-center p-5 shadow-sm border-0 bg-light">
-                    <Card.Body>
-                        <h4 className="text-muted">Nenhuma matéria-prima cadastrada</h4>
-                        <p className="text-muted">Cadastre seus primeiros insumos para começar a montar receitas de produtos.</p>
-                        <Button variant="primary" onClick={handleCreate}>
-                            + Cadastrar Insumo
-                        </Button>
-                    </Card.Body>
-                </Card>
-            ) : (
-                <Card className="shadow-sm border-0">
-                    <Table responsive hover className="mb-0 align-middle">
-                        <thead className="table-dark">
-                            <tr>
-                                <th style={{ width: "80px" }}>ID</th>
-                                <th>Insumo / Matéria-Prima</th>
-                                <th className="text-center" style={{ width: "200px" }}>Qtd. em Estoque</th>
-                                <th className="text-end" style={{ width: "180px" }}>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {materials.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="text-muted fw-bold">#{item.id}</td>
-                                    <td className="fw-semibold">{item.name}</td>
-                                    <td className="text-center">
-                                        <Badge
-                                            bg={item.stockQuantity > 0 ? "success" : "danger"}
-                                            className="px-3 py-2 fs-6"
-                                        >
-                                            {item.stockQuantity} un
-                                        </Badge>
-                                    </td>
-                                    <td className="text-end">
-                                        <Button
-                                            variant="outline-warning"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleEdit(item)}
-                                        >
-                                            Editar
-                                        </Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => setDeletingId(item.id)}
-                                        >
-                                            Excluir
-                                        </Button>
-                                    </td>
+
+                <div className="p-0">
+                    {loading ? (
+                        <div className="text-center py-5">
+                            <Spinner animation="border" variant="primary" />
+                            <p className="mt-2 text-muted">Carregando estoque de insumos...</p>
+                        </div>
+                    ) : filteredMaterials.length === 0 ? (
+                        <div className="text-center p-5 text-muted">
+                            <Boxes size={42} className="text-muted mb-2 opacity-50" />
+                            <h5>Nenhuma matéria-prima encontrada</h5>
+                            <p className="small mb-3">
+                                {searchTerm ? "Nenhum resultado para os termos pesquisados." : "Cadastre sua primeira matéria-prima para alimentar as receitas de produção."}
+                            </p>
+                            {!searchTerm && (
+                                <Button
+                                    className="btn-modern-primary btn-sm"
+                                    onClick={() => {
+                                        setEditingMaterial(null);
+                                        setShowFormModal(true);
+                                    }}
+                                >
+                                    <Plus size={16} /> Cadastrar Insumo
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <Table responsive className="modern-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: "90px" }}>ID</th>
+                                    <th>Nome do Insumo / Matéria-Prima</th>
+                                    <th className="text-center" style={{ width: "240px" }}>Disponibilidade</th>
+                                    <th className="text-center" style={{ width: "160px" }}>Status</th>
+                                    <th className="text-end" style={{ width: "160px" }}>Ações</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </Card>
-            )}
+                            </thead>
+                            <tbody>
+                                {filteredMaterials.map((item) => {
+                                    const isZero = item.stockQuantity === 0;
+                                    const isLow = item.stockQuantity <= 10;
+                                    return (
+                                        <tr key={item.id}>
+                                            <td className="text-muted fw-bold">#{item.id}</td>
+                                            <td className="fw-semibold fs-6">{item.name}</td>
+                                            <td className="text-center">
+                                                <div className="stock-progress-container mx-auto">
+                                                    <div className="d-flex justify-content-between small fw-bold">
+                                                        <span>{item.stockQuantity} un</span>
+                                                    </div>
+                                                    <div className="stock-progress-bar">
+                                                        <div
+                                                            className="stock-progress-fill"
+                                                            style={{
+                                                                width: `${Math.min(100, Math.max(5, item.stockQuantity))}%`,
+                                                                backgroundColor: isZero ? "#ef4444" : isLow ? "#f59e0b" : "#10b981",
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="text-center">
+                                                {isZero ? (
+                                                    <span className="badge-pill-custom badge-danger-soft">Esgotado</span>
+                                                ) : isLow ? (
+                                                    <span className="badge-pill-custom badge-warning-soft">Estoque Baixo</span>
+                                                ) : (
+                                                    <span className="badge-pill-custom badge-success-soft">Em Estoque</span>
+                                                )}
+                                            </td>
+                                            <td className="text-end">
+                                                <Button
+                                                    variant="outline-primary"
+                                                    size="sm"
+                                                    className="me-2"
+                                                    onClick={() => {
+                                                        setEditingMaterial(item);
+                                                        setShowFormModal(true);
+                                                    }}
+                                                    title="Editar insumo"
+                                                >
+                                                    <Pencil size={14} />
+                                                </Button>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    onClick={() => setDeletingId(item.id)}
+                                                    title="Excluir insumo"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </Table>
+                    )}
+                </div>
+            </div>
 
             {showFormModal && (
                 <RawMaterialFormModal
@@ -160,7 +248,7 @@ export function RawMaterialsPage() {
                         setEditingMaterial(null);
                     }}
                     onSuccess={() => {
-                        setSuccessMessage(editingMaterial ? "Matéria-prima atualizada!" : "Matéria-prima cadastrada!");
+                        setSuccessMessage(editingMaterial ? "Matéria-prima atualizada com sucesso!" : "Matéria-prima cadastrada com sucesso!");
                         setTimeout(() => setSuccessMessage(null), 4000);
                         fetchMaterials();
                     }}
@@ -170,14 +258,14 @@ export function RawMaterialsPage() {
 
             <ConfirmModal
                 show={deletingId !== null}
-                title="⚠️ Confirmar Exclusão"
-                message="Tem certeza que deseja excluir esta matéria-prima? Se ela estiver vinculada a produtos, a exclusão será bloqueada para garantir a integridade das receitas."
+                title="⚠️ Confirmar Exclusão de Insumo"
+                message="Tem certeza que deseja excluir esta matéria-prima? Caso ela esteja vinculada a fichas técnicas de produtos, a exclusão será bloqueada para preservar a integridade das receitas."
                 confirmText="Sim, Excluir"
                 variant="danger"
                 isLoading={isDeleting}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeletingId(null)}
             />
-        </Container>
+        </div>
     );
 }
