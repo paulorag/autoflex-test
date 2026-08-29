@@ -5,27 +5,31 @@ import com.autoflex.production.dto.response.RawMaterialResponseDTO;
 import com.autoflex.production.exception.BusinessRuleException;
 import com.autoflex.production.exception.GlobalExceptionHandler;
 import com.autoflex.production.exception.ResourceNotFoundException;
+import com.autoflex.production.security.JwtTokenService;
 import com.autoflex.production.service.RawMaterialService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RawMaterialController.class)
 @Import(GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 class RawMaterialControllerTest {
 
     @Autowired
@@ -36,6 +40,12 @@ class RawMaterialControllerTest {
 
     @MockitoBean
     private RawMaterialService service;
+
+    @MockitoBean
+    private JwtTokenService jwtTokenService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @Test
     @DisplayName("GET /api/raw-materials - Deve retornar lista com status 200")

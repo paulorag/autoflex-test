@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ public class ProductionOrderController {
 
     @Operation(summary = "Listar histórico de ordens", description = "Retorna a listagem cronológica de todas as ordens de fabricação já executadas com itens e valores.")
     @ApiResponse(responseCode = "200", description = "Histórico de ordens retornado com sucesso")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<ProductionOrderResponseDTO>> listAll() {
         return ResponseEntity.ok(service.findAll());
@@ -35,6 +37,7 @@ public class ProductionOrderController {
             @ApiResponse(responseCode = "200", description = "Ordem encontrada"),
             @ApiResponse(responseCode = "404", description = "Ordem não encontrada")
     })
+    @PreAuthorize("hasAnyRole('OPERATOR', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductionOrderResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));

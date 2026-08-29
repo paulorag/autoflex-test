@@ -57,6 +57,37 @@ export interface ProductionOrder {
     items: ProductionOrderItem[];
 }
 
+export type UserRole = "ROLE_ADMIN" | "ROLE_OPERATOR";
+
+export interface AuthUser {
+    id: number;
+    username: string;
+    name: string;
+    role: UserRole;
+}
+
+export interface AuthResponse {
+    token: string;
+    tokenType: string;
+    id: number;
+    username: string;
+    name: string;
+    role: UserRole;
+    expiresIn: number;
+}
+
+export interface LoginRequest {
+    username: string;
+    password: string;
+}
+
+export interface RegisterRequest {
+    username: string;
+    password: string;
+    name: string;
+    role: UserRole;
+}
+
 export interface ApiError {
     timestamp?: string;
     status?: number;
