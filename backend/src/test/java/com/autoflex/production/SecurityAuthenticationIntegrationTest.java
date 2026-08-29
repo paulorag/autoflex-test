@@ -127,4 +127,14 @@ class SecurityAuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.username").value("admin"))
                 .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
     }
+
+    @Test
+    @DisplayName("GET /actuator/health - Chamada anônima deve retornar status UP sem vazar detalhes internos")
+    void shouldReturnSimplifiedHealthStatusWithoutSensitiveDetailsForAnonymousRequests() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.components").doesNotExist())
+                .andExpect(jsonPath("$.details").doesNotExist());
+    }
 }
