@@ -2,6 +2,7 @@
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.3-brightgreen.svg?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring_Security-JWT_Auth-6DB33F.svg?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -29,7 +30,7 @@
 
 O **Autoflex PCP** é uma solução Full-Stack moderna de **Planejamento e Controle da Produção (PCP / MRP)** voltada para indústrias e operações de montagem. O sistema gerencia o estoque de **Matérias-Primas**, **Fichas Técnicas de Produtos (BOM)** e utiliza um **Algoritmo Guloso de Otimização** para definir o melhor mix de fabricação que maximiza o faturamento financeiro com base nas limitações de insumos em estoque.
 
-Além do cálculo da capacidade produtiva, o sistema permite a **Efetivação Atômica da Produção** (baixa real e imediata no estoque de insumos) e o registro do **Histórico com Rastreabilidade** de todas as ordens executadas.
+Além do cálculo da capacidade produtiva, o sistema conta com **Autenticação JWT & RBAC (Role-Based Access Control)**, **Efetivação Atômica da Produção** (baixa real e imediata no estoque de insumos) e registro do **Histórico com Rastreabilidade** de todas as ordens executadas.
 
 ---
 
@@ -40,62 +41,69 @@ autoflex-pcp/
 ├── .github/workflows/ci.yml       # Pipeline de CI no GitHub Actions (Java 21 + Node 20)
 ├── backend/                       # API RESTful Spring Boot 3.4.3 (Clean Layered Architecture)
 │   ├── src/main/java/com/autoflex/production/
-│   │   ├── config/                # Configurações de CORS, Swagger/OpenAPI e Segurança
-│   │   ├── controller/            # Controladores REST (@Valid, Códigos HTTP Semânticos)
-│   │   ├── domain/                # Entidades JPA (Lombok limpo, FetchType.LAZY)
+│   │   ├── config/                # Configurações de CORS, Swagger/OpenAPI e Spring Security
+│   │   ├── controller/            # Controladores REST (@Valid, Códigos HTTP Semânticos, @PreAuthorize)
+│   │   ├── domain/                # Entidades JPA (Lombok limpo, FetchType.LAZY, UserDetails)
 │   │   ├── dto/                   # Records imutáveis para Request e Response
 │   │   ├── exception/             # Tratamento Global de Exceções (@RestControllerAdvice)
 │   │   ├── mapper/                # Mappers Spring Component (Entidade <-> DTO)
 │   │   ├── repository/            # Repositórios Spring Data JPA (@EntityGraph anti N+1)
+│   │   ├── security/              # JWT Token Service, Auth Filters e EntryPoints
 │   │   └── service/               # Regras de Negócio (@Transactional, Otimização)
 │   └── src/main/resources/
-│       ├── db/migration/          # Migrações Versionadas com Flyway (V1 a V4)
+│       ├── db/migration/          # Migrações Versionadas com Flyway (V1 a V5)
 │       └── application.properties # Configuração H2 memória & PostgreSQL
 ├── frontend/                      # SPA React 19 + TypeScript + Vite
 │   ├── src/
-│   │   ├── components/            # Sidebar colapsável, Header, Modais, ConfirmDialogs
+│   │   ├── components/            # Sidebar colapsável, Header, Modais de Login/CRUD
 │   │   ├── pages/                 # Dashboard, Matérias-Primas, Produtos, Planejamento, Ordens
-│   │   ├── services/              # Camada de Serviços HTTP isolada com Axios
+│   │   ├── services/              # Camada de Serviços HTTP com interceptor JWT Axios
 │   │   └── types/                 # Interfaces TypeScript alinhadas aos DTOs
 │   └── cypress/                   # Testes Automatizados Ponta a Ponta (E2E)
-└── docker-compose.yaml            # Orquestração Multi-Container Full Stack
+├── .env.example                   # Template seguro de variáveis de ambiente
+└── docker-compose.yaml            # Orquestração Multi-Container Full Stack isolada
 ```
 
 ### 🛠️ Tecnologias Utilizadas:
-- **Backend:** Java 21, Spring Boot 3.4.3, Spring Data JPA, Jakarta Bean Validation, Flyway Migrations, SpringDoc OpenAPI 3, Spring Boot Actuator, H2 Database (desenvolvimento/testes) e PostgreSQL 16 (produção).
-- **Frontend:** React 19, TypeScript 5.9, Vite, Bootstrap 5, Lucide Icons, Axios.
+- **Backend:** Java 21, Spring Boot 3.4.3, Spring Security (JWT / JJWT 0.12), Spring Data JPA, Jakarta Bean Validation, Flyway Migrations, SpringDoc OpenAPI 3, Spring Boot Actuator, H2 Database (desenvolvimento/testes) e PostgreSQL 16 (produção).
+- **Frontend:** React 19, TypeScript 5.9, Vite, Bootstrap 5, Lucide Icons, Axios (com interceptors de token).
 - **DevOps & QA:** Docker, Docker Compose, Nginx Alpine, GitHub Actions CI, JUnit 5, Mockito, MockMvc, Cypress E2E.
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-1. **📊 Painel Geral de PCP (Dashboard Industrial):**
+1. **🔐 Segurança & Autenticação Baseada em Papéis (RBAC):**
+   - Autenticação stateless via tokens JWT de 24 horas.
+   - Papéis configurados: **Administrador (`ROLE_ADMIN`)** para gestão de insumos/produtos e **Operador (`ROLE_OPERATOR`)** para visualização e execução de ordens.
+   - Contas iniciais prontas para teste: `admin` / `admin123` e `operador` / `operador123`.
+
+2. **📊 Painel Geral de PCP (Dashboard Industrial):**
    - Resumo em tempo real com KPIs (Faturamento Projetado, Saúde do Estoque, Itens Ativos, Ordens Realizadas).
    - Sugestão de fabricação imediata com botão de execução em 1 clique.
    - Indicador visual de saúde do estoque de matérias-primas com alertas de níveis críticos/esgotados.
 
-2. **📦 Controle de Estoque de Matérias-Primas:**
+3. **📦 Controle de Estoque de Matérias-Primas:**
    - CRUD completo com busca instantânea por nome.
    - Barras de progresso e badges coloridas de disponibilidade.
    - Proteção de integridade referencial impedindo exclusão de insumos vinculados a receitas ativas.
 
-3. **🛠️ Catálogo de Produtos e Fichas Técnicas (BOM):**
+4. **🛠️ Catálogo de Produtos e Fichas Técnicas (BOM):**
    - Cadastro de produtos com receitas de múltiplos ingredientes (relacionamento $N:N$).
    - Prevenção em tempo real de matérias-primas duplicadas na mesma receita.
    - Indicadores de ticket médio e chips informativos de composição.
 
-4. **⚡ Algoritmo Inteligente de Planejamento de Produção:**
+5. **⚡ Algoritmo Inteligente de Planejamento de Produção:**
    - Avalia o estoque disponível e ordena os produtos por maior preço de venda.
    - Aloca matérias-primas de forma gulosa priorizando a maximização do faturamento da fábrica.
    - Protegido contra divisão por zero, estoques negativos e produtos sem componentes.
 
-5. **⚡ Efetivação Real de Produção & Baixa de Estoque:**
+6. **⚡ Efetivação Real de Produção & Baixa de Estoque:**
    - Execução transacional (`@Transactional`) da fabricação sugerida.
    - Débito automático das quantidades consumidas no estoque físico de matérias-primas.
    - Geração de **Ordem de Produção** persistente com histórico detalhado.
 
-6. **📜 Rastreabilidade & Histórico de Ordens:**
+7. **📜 Rastreabilidade & Histórico de Ordens:**
    - Linha do tempo cronológica de todas as produções realizadas na fábrica.
    - Accordion expansível com detalhes de itens fabricados, valores unitários e subtotais.
 
@@ -103,14 +111,17 @@ autoflex-pcp/
 
 ## 🚀 Como Executar com Docker (Recomendado)
 
-Suba todo o ecossistema (PostgreSQL + Backend + Frontend) com um único comando:
+Suba todo o ecossistema (PostgreSQL + Backend + Frontend) de forma isolada e segura:
 
 ```bash
 # 1. Clone o repositório
 git clone https://github.com/paulorag/autoflex-pcp.git
 cd autoflex-pcp
 
-# 2. Construa e inicie os containers
+# 2. Crie o arquivo .env a partir do template de segurança
+cp .env.example .env
+
+# 3. Construa e inicie os containers
 docker compose up --build
 ```
 
@@ -149,22 +160,25 @@ npm run dev
 
 ## 📡 Tabela de Endpoints da API RESTful
 
-| Método | Endpoint | Descrição | Status HTTP |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/raw-materials` | Lista todas as matérias-primas em estoque | `200 OK` |
-| `POST` | `/api/raw-materials` | Cadastra nova matéria-prima | `201 Created` |
-| `GET` | `/api/raw-materials/{id}` | Busca matéria-prima por ID | `200 OK` / `404 Not Found` |
-| `PUT` | `/api/raw-materials/{id}` | Atualiza matéria-prima existente | `200 OK` / `404 Not Found` |
-| `DELETE` | `/api/raw-materials/{id}` | Exclui matéria-prima (se não vinculada) | `204 No Content` / `409 Conflict` |
-| `GET` | `/api/products` | Lista catálogo de produtos e receitas | `200 OK` |
-| `POST` | `/api/products` | Cadastra novo produto com receita (BOM) | `201 Created` |
-| `GET` | `/api/products/{id}` | Busca produto e receita por ID | `200 OK` / `404 Not Found` |
-| `PUT` | `/api/products/{id}` | Atualiza dados e receita do produto | `200 OK` / `404 Not Found` |
-| `DELETE` | `/api/products/{id}` | Exclui produto do catálogo | `204 No Content` / `404 Not Found` |
-| `GET` | `/api/production-planning` | Calcula o planejamento otimizado | `200 OK` |
-| `POST` | `/api/production-planning/execute` | Efetiva produção e debita estoque | `201 Created` / `400 Bad Request` |
-| `GET` | `/api/production-orders` | Lista histórico de ordens de produção | `200 OK` |
-| `GET` | `/api/production-orders/{id}` | Busca ordem de produção por ID | `200 OK` / `404 Not Found` |
+| Método | Endpoint | Descrição | Permissão (RBAC) | Status HTTP |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Autenticação por credenciais e emissão de JWT | Público | `200 OK` / `401 Unauthorized` |
+| `POST` | `/api/auth/register` | Cadastro de novo usuário | Público | `201 Created` / `400 Bad Request` |
+| `GET` | `/api/auth/me` | Dados do usuário autenticado no token | Autenticado | `200 OK` / `401 Unauthorized` |
+| `GET` | `/api/raw-materials` | Lista todas as matérias-primas | `OPERATOR`, `ADMIN` | `200 OK` |
+| `POST` | `/api/raw-materials` | Cadastra nova matéria-prima | `ADMIN` | `201 Created` / `403 Forbidden` |
+| `GET` | `/api/raw-materials/{id}` | Busca matéria-prima por ID | `OPERATOR`, `ADMIN` | `200 OK` / `404 Not Found` |
+| `PUT` | `/api/raw-materials/{id}` | Atualiza matéria-prima existente | `ADMIN` | `200 OK` / `403 Forbidden` |
+| `DELETE` | `/api/raw-materials/{id}` | Exclui matéria-prima | `ADMIN` | `204 No Content` / `403 Forbidden` / `409 Conflict` |
+| `GET` | `/api/products` | Lista catálogo de produtos e receitas | `OPERATOR`, `ADMIN` | `200 OK` |
+| `POST` | `/api/products` | Cadastra novo produto com receita (BOM) | `ADMIN` | `201 Created` / `403 Forbidden` |
+| `GET` | `/api/products/{id}` | Busca produto e receita por ID | `OPERATOR`, `ADMIN` | `200 OK` / `404 Not Found` |
+| `PUT` | `/api/products/{id}` | Atualiza dados e receita do produto | `ADMIN` | `200 OK` / `403 Forbidden` |
+| `DELETE` | `/api/products/{id}` | Exclui produto do catálogo | `ADMIN` | `204 No Content` / `403 Forbidden` |
+| `GET` | `/api/production-planning` | Calcula o planejamento otimizado | `OPERATOR`, `ADMIN` | `200 OK` |
+| `POST` | `/api/production-planning/execute` | Efetiva produção e debita estoque | `OPERATOR`, `ADMIN` | `201 Created` / `400 Bad Request` |
+| `GET` | `/api/production-orders` | Lista histórico de ordens de produção | `OPERATOR`, `ADMIN` | `200 OK` |
+| `GET` | `/api/production-orders/{id}` | Busca ordem de produção por ID | `OPERATOR`, `ADMIN` | `200 OK` / `404 Not Found` |
 
 ---
 
@@ -175,7 +189,7 @@ npm run dev
 cd backend
 ./mvnw clean test
 ```
-*Executa todos os 37 testes automatizados cobrindo regras de negócio, cálculo de planejamento, persistência de ordens e validações de banco de dados.*
+*Executa todos os 43 testes automatizados cobrindo autenticação JWT, RBAC, regras de negócio, cálculo de planejamento, persistência de ordens e integridade de banco de dados.*
 
 ### Validação de Build do Frontend (Type-Check & Vite)
 ```bash
