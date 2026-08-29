@@ -1,15 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { Accordion, Table, Alert, Spinner, Row, Col, Button } from "react-bootstrap";
-import { ClipboardCheck, Calendar, DollarSign, Package, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ClipboardCheck, Calendar, DollarSign, Package, RefreshCw, AlertTriangle, LogIn } from "lucide-react";
 import { productionOrderService } from "../services/productionOrderService";
 import type { ProductionOrder } from "../types";
+import { useAuth } from "../context/AuthContext";
 
 export function ProductionOrdersPage() {
+    const { token, isAuthenticated, openLoginModal } = useAuth();
     const [orders, setOrders] = useState<ProductionOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchOrders = useCallback(() => {
+        if (!token) return;
         setLoading(true);
         productionOrderService.getAll()
             .then((data) => {
@@ -18,14 +21,22 @@ export function ProductionOrdersPage() {
             })
             .catch((err) => {
                 console.error("Erro ao carregar ordens de produção:", err);
-                setError("Erro ao carregar histórico de ordens de produção do servidor.");
+                if (err.response?.status === 401) {
+                    setError("Sessão expirada. Por favor, faça login novamente.");
+                } else {
+                    setError("Erro ao carregar histórico de ordens de produção do servidor.");
+                }
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [token]);
 
     useEffect(() => {
-        fetchOrders();
-    }, [fetchOrders]);
+        if (isAuthenticated) {
+            fetchOrders();
+        } else {
+            setLoading(false);
+        }
+    }, [isAuthenticated, fetchOrders]);
 
     const formatDate = (dateStr: string) => {
         try {
@@ -45,6 +56,27 @@ export function ProductionOrdersPage() {
     const totalRealizedRevenue = orders.reduce((acc, o) => acc + o.totalValue, 0);
     const totalManufacturedItems = orders.reduce((acc, o) => acc + o.totalItems, 0);
 
+    if (!isAuthenticated) {
+        return (
+            <div className="page-container">
+                <Alert variant="warning" className="shadow-sm border-0 d-flex align-items-center justify-content-between p-4 mb-4">
+                    <div className="d-flex align-items-center gap-3">
+                        <AlertTriangle size={28} className="text-warning" />
+                        <div>
+                            <h5 className="mb-1 fw-bold">Autenticação Necessária</h5>
+                            <p className="mb-0 text-muted small">
+                                O histórico e a rastreabilidade de ordens fabris são confidenciais. Faça login para consultar.
+                            </p>
+                        </div>
+                    </div>
+                    <Button variant="primary" onClick={openLoginModal} className="d-flex align-items-center gap-2">
+                        <LogIn size={16} /> Entrar no Sistema
+                    </Button>
+                </Alert>
+            </div>
+        );
+    }
+
     return (
         <div className="page-container">
             {error && (
@@ -59,123 +91,123 @@ export function ProductionOrdersPage() {
                 <Col md={4}>
                     <div className="kpi-card">
                         <div className="kpi-icon-box amber">
-                            <ClipboardCheck size={26} />
+                            <ClipboardCheck size={28} />
                         </div>
                         <div className="kpi-content">
-                            <div className="kpi-label">Ordens Realizadas</div>
-                            <div className="kpi-value">{orders.length} ordens</div>
+                            <div className="kpi-label">Total de Ordens Efetivadas</div>
+                            <div className="kpi-value">{orders.length}</div>
+                            <div className="kpi-subtext">Histórico completo de batches</div>
                         </div>
                     </div>
                 </Col>
+
                 <Col md={4}>
                     <div className="kpi-card">
                         <div className="kpi-icon-box green">
-                            <DollarSign size={26} />
+                            <DollarSign size={28} />
                         </div>
                         <div className="kpi-content">
                             <div className="kpi-label">Faturamento Total Realizado</div>
                             <div className="kpi-value text-success">
                                 R$ {totalRealizedRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </div>
+                            <div className="kpi-subtext">Volume produzido e consolidado</div>
                         </div>
                     </div>
                 </Col>
+
                 <Col md={4}>
                     <div className="kpi-card">
                         <div className="kpi-icon-box blue">
-                            <Package size={26} />
+                            <Package size={28} />
                         </div>
                         <div className="kpi-content">
-                            <div className="kpi-label">Itens Fabricados</div>
-                            <div className="kpi-value">{totalManufacturedItems} unidades</div>
+                            <div className="kpi-label">Produtos Fabricados</div>
+                            <div className="kpi-value">{totalManufacturedItems.toLocaleString()} un</div>
+                            <div className="kpi-subtext">Total de itens acabados</div>
                         </div>
                     </div>
                 </Col>
             </Row>
 
-            {/* Main Orders List */}
+            {/* Orders Timeline / Accordion */}
             <div className="custom-card">
-                <div className="custom-card-header flex-wrap gap-3">
+                <div className="custom-card-header flex-column flex-md-row gap-3">
                     <div>
                         <h5 className="mb-0 fw-bold d-flex align-items-center gap-2">
-                            <ClipboardCheck size={20} className="text-primary" />
-                            Histórico de Ordens de Produção
+                            <ClipboardCheck size={22} className="text-primary" />
+                            Rastreabilidade Cronológica de Ordens
                         </h5>
-                        <small className="text-muted">Registro detalhado com rastreabilidade de produtos e valores</small>
+                        <small className="text-muted">Registro auditável de todas as baixas de matérias-primas e produções</small>
                     </div>
+
                     <Button
                         variant="outline-secondary"
-                        size="sm"
-                        className="d-flex align-items-center gap-1"
+                        className="d-flex align-items-center gap-1 btn-sm"
                         onClick={fetchOrders}
                         disabled={loading}
                     >
-                        <RefreshCw size={15} /> Atualizar Histórico
+                        <RefreshCw size={14} className={loading ? "spin" : ""} /> Atualizar
                     </Button>
                 </div>
 
-                <div className="p-4">
+                <div className="p-0">
                     {loading ? (
                         <div className="text-center py-5">
                             <Spinner animation="border" variant="primary" />
-                            <p className="mt-2 text-muted">Carregando histórico de ordens...</p>
+                            <p className="mt-2 text-muted">Carregando histórico e rastreabilidade...</p>
                         </div>
                     ) : orders.length === 0 ? (
-                        <div className="text-center p-5 text-muted">
-                            <ClipboardCheck size={42} className="text-muted mb-2 opacity-50" />
-                            <h5>Nenhuma ordem de produção realizada até o momento</h5>
-                            <p className="small">
-                                Quando você efetivar um plano na aba <strong>Planejamento PCP</strong>, o histórico completo ficará registrado aqui.
-                            </p>
+                        <div className="text-center py-5 text-muted">
+                            <ClipboardCheck size={48} className="text-muted mb-2 opacity-50" />
+                            <h6>Nenhuma ordem de produção realizada até o momento</h6>
+                            <p className="small">Quando você efetivar um plano no Dashboard ou na tela de Planejamento, o histórico aparecerá aqui.</p>
                         </div>
                     ) : (
-                        <Accordion defaultActiveKey="0" className="d-flex flex-column gap-3">
-                            {orders.map((order, index) => (
-                                <Accordion.Item
-                                    eventKey={String(index)}
-                                    key={order.id}
-                                    className="border rounded-3 overflow-hidden shadow-sm"
-                                >
+                        <Accordion defaultActiveKey="0" className="modern-accordion">
+                            {orders.map((order, idx) => (
+                                <Accordion.Item eventKey={idx.toString()} key={order.id} className="border-bottom">
                                     <Accordion.Header>
-                                        <div className="d-flex justify-content-between align-items-center w-100 me-3 flex-wrap gap-2">
-                                            <div className="d-flex align-items-center gap-2">
-                                                <span className="badge-pill-custom badge-primary-soft fw-bold">
+                                        <div className="d-flex justify-content-between align-items-center w-100 me-3">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <span className="badge-pill-custom badge-success-soft fw-bold">
                                                     Ordem #{order.id}
                                                 </span>
-                                                <span className="text-muted small d-flex align-items-center gap-1">
-                                                    <Calendar size={14} /> {formatDate(order.createdAt)}
-                                                </span>
+                                                <div className="text-muted small d-flex align-items-center gap-1">
+                                                    <Calendar size={14} />
+                                                    {formatDate(order.createdAt)}
+                                                </div>
                                             </div>
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span className="badge-pill-custom badge-indigo-soft">
-                                                    {order.totalItems} peças fabricadas
-                                                </span>
-                                                <span className="fw-bold text-success fs-6">
+
+                                            <div className="d-flex align-items-center gap-4">
+                                                <div className="small text-muted d-none d-md-block">
+                                                    {order.totalItems} produtos fabricados
+                                                </div>
+                                                <div className="fw-bold text-success fs-6">
                                                     R$ {order.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                                </span>
-                                                <span className="badge-pill-custom badge-success-soft">
-                                                    <CheckCircle2 size={14} /> CONCLUÍDA
-                                                </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </Accordion.Header>
-                                    <Accordion.Body className="bg-light p-3">
-                                        <h6 className="fw-bold mb-3 text-secondary">📋 Composição da Ordem:</h6>
-                                        <Table size="sm" responsive className="modern-table bg-white rounded border">
+                                    <Accordion.Body className="p-0">
+                                        <div className="p-3 bg-light border-bottom">
+                                            <h6 className="small text-uppercase fw-bold text-muted mb-0">Itens Produzidos neste Lote:</h6>
+                                        </div>
+                                        <Table responsive className="modern-table mb-0 bg-white">
                                             <thead>
                                                 <tr>
-                                                    <th>Produto Fabricado</th>
-                                                    <th className="text-center" style={{ width: "160px" }}>Quantidade</th>
-                                                    <th className="text-end" style={{ width: "180px" }}>Preço Unitário</th>
-                                                    <th className="text-end" style={{ width: "200px" }}>Subtotal</th>
+                                                    <th>Produto Acabado</th>
+                                                    <th className="text-center">Quantidade Produzida</th>
+                                                    <th className="text-end">Preço Unitário</th>
+                                                    <th className="text-end">Subtotal Realizado</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {order.items.map((item) => (
-                                                    <tr key={item.id}>
-                                                        <td className="fw-semibold">{item.productName}</td>
+                                                {order.items.map((item, itemIdx) => (
+                                                    <tr key={itemIdx}>
+                                                        <td className="fw-semibold text-dark">{item.productName}</td>
                                                         <td className="text-center">
-                                                            <span className="badge-pill-custom badge-slate-soft">
+                                                            <span className="badge bg-light text-dark border">
                                                                 {item.quantity} un
                                                             </span>
                                                         </td>

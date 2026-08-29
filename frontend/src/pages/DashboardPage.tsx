@@ -10,6 +10,7 @@ import {
     AlertTriangle,
     Zap,
     CheckCircle2,
+    LogIn,
 } from "lucide-react";
 import { rawMaterialService } from "../services/rawMaterialService";
 import { productService } from "../services/productService";
@@ -17,8 +18,10 @@ import { planningService } from "../services/planningService";
 import { productionOrderService } from "../services/productionOrderService";
 import type { RawMaterial, Product, ProductionPlan, ProductionOrder } from "../types";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { useAuth } from "../context/AuthContext";
 
 export function DashboardPage() {
+    const { token, isAuthenticated, openLoginModal } = useAuth();
     const [materials, setMaterials] = useState<RawMaterial[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [plan, setPlan] = useState<ProductionPlan[]>([]);
@@ -26,9 +29,10 @@ export function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [executing, setExecuting] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [notification, setNotification] = useState<{ type: "success" | "danger"; message: string } | null>(null);
+    const [notification, setNotification] = useState<{ type: "success" | "danger" | "warning"; message: string } | null>(null);
 
     const loadDashboardData = useCallback(async () => {
+        if (!token) return;
         setLoading(true);
         try {
             const [matsData, prodsData, planData, ordersData] = await Promise.all([
@@ -41,17 +45,32 @@ export function DashboardPage() {
             setProducts(prodsData);
             setPlan(planData);
             setOrders(ordersData);
-        } catch (err) {
+            setNotification(null);
+        } catch (err: any) {
             console.error("Erro ao carregar dados do dashboard:", err);
-            setNotification({ type: "danger", message: "Erro ao conectar com a API do servidor." });
+            if (err.response?.status === 401) {
+                setNotification({
+                    type: "warning",
+                    message: "Sessão expirada ou não autorizada. Faça login para acessar o painel.",
+                });
+            } else {
+                setNotification({
+                    type: "danger",
+                    message: "Erro ao conectar com a API do servidor.",
+                });
+            }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [token]);
 
     useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
+        if (isAuthenticated) {
+            loadDashboardData();
+        } else {
+            setLoading(false);
+        }
+    }, [isAuthenticated, loadDashboardData]);
 
     const handleExecutePlan = async () => {
         setExecuting(true);
@@ -77,6 +96,27 @@ export function DashboardPage() {
     const totalPlannedUnits = plan.reduce((acc, item) => acc + item.quantity, 0);
     const lowStockCount = materials.filter((m) => m.stockQuantity < 10).length;
 
+    if (!isAuthenticated) {
+        return (
+            <div className="page-container">
+                <Alert variant="warning" className="shadow-sm border-0 d-flex align-items-center justify-content-between p-4 mb-4">
+                    <div className="d-flex align-items-center gap-3">
+                        <AlertTriangle size={28} className="text-warning" />
+                        <div>
+                            <h5 className="mb-1 fw-bold">Autenticação Necessária</h5>
+                            <p className="mb-0 text-muted small">
+                                O sistema de controle de produção exige login para carregar os indicadores industriais e ordens de fabricação.
+                            </p>
+                        </div>
+                    </div>
+                    <Button variant="primary" onClick={openLoginModal} className="d-flex align-items-center gap-2">
+                        <LogIn size={16} /> Entrar no Sistema
+                    </Button>
+                </Alert>
+            </div>
+        );
+    }
+
     return (
         <div className="page-container">
             {notification && (
@@ -86,7 +126,13 @@ export function DashboardPage() {
                     onClose={() => setNotification(null)}
                     className="shadow-sm border-0 d-flex align-items-center gap-2 mb-4"
                 >
-                    {notification.type === "success" ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+                    {notification.type === "success" ? (
+                        <CheckCircle2 size={20} />
+                    ) : notification.type === "warning" ? (
+                        <AlertTriangle size={20} />
+                    ) : (
+                        <AlertTriangle size={20} />
+                    )}
                     <span className="fw-semibold">{notification.message}</span>
                 </Alert>
             )}
@@ -195,7 +241,7 @@ export function DashboardPage() {
                                         <h6>Estoque insuficiente para produzir</h6>
                                         <p className="small mb-3">Reabasteça suas matérias-primas para que o PCP volte a sugerir fabricação.</p>
                                         <Link to="/raw-materials" className="btn btn-outline-primary btn-sm">
-                                            Ir para Matérias-Primas
+                                             Ir para Matérias-Primas
                                         </Link>
                                     </div>
                                 ) : (

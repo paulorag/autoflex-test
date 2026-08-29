@@ -19,12 +19,12 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Se o token expirou ou for inválido, podemos limpar e notificar
             if (localStorage.getItem("autoflex_token")) {
                 localStorage.removeItem("autoflex_token");
                 localStorage.removeItem("autoflex_user");
-                window.dispatchEvent(new Event("autoflex_auth_change"));
             }
+            window.dispatchEvent(new Event("autoflex_unauthorized"));
+            window.dispatchEvent(new Event("autoflex_auth_change"));
         }
         return Promise.reject(error);
     }
