@@ -15,32 +15,45 @@ export function PlanningPage() {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    const fetchPlan = useCallback(() => {
+    const fetchPlan = useCallback((isCurrentMounted?: () => boolean) => {
         if (!token) return;
         setLoading(true);
         planningService.getPlan()
             .then((data) => {
-                setPlan(data);
-                setError(null);
-            })
-            .catch((err) => {
-                console.error("Erro ao carregar planejamento:", err);
-                if (err.response?.status === 401) {
-                    setError("Sessão expirada. Por favor, faça login novamente.");
-                } else {
-                    setError("Erro ao calcular planejamento de produção no servidor.");
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setPlan(data);
+                    setError(null);
                 }
             })
-            .finally(() => setLoading(false));
+            .catch((err) => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    console.error("Erro ao carregar planejamento:", err);
+                    if (err.response?.status === 401) {
+                        setError("Sessão expirada. Por favor, faça login novamente.");
+                    } else {
+                        setError("Erro ao calcular planejamento de produção no servidor.");
+                    }
+                }
+            })
+            .finally(() => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setLoading(false);
+                }
+            });
     }, [token]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchPlan();
+        let isMounted = true;
+        if (isAuthenticated && token) {
+            fetchPlan(() => isMounted);
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, fetchPlan]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isAuthenticated, token, fetchPlan]);
 
     const handleExecuteProduction = async () => {
         setExecuting(true);
@@ -165,7 +178,7 @@ export function PlanningPage() {
                         <Button
                             variant="outline-secondary"
                             className="d-flex align-items-center gap-1 btn-sm"
-                            onClick={fetchPlan}
+                            onClick={() => fetchPlan()}
                             disabled={loading || executing}
                         >
                             <RefreshCw size={14} className={loading ? "spin" : ""} /> Recalcular

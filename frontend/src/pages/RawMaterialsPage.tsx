@@ -23,32 +23,45 @@ export function RawMaterialsPage() {
 
     const isAdmin = user?.role === "ROLE_ADMIN";
 
-    const fetchMaterials = useCallback(() => {
+    const fetchMaterials = useCallback((isCurrentMounted?: () => boolean) => {
         if (!token) return;
         setLoading(true);
         rawMaterialService.getAll()
             .then((data) => {
-                setMaterials(data);
-                setError(null);
-            })
-            .catch((err) => {
-                console.error("Erro ao buscar dados:", err);
-                if (err.response?.status === 401) {
-                    setError("Sessão expirada. Por favor, autentique-se novamente.");
-                } else {
-                    setError("Erro ao carregar matérias-primas do servidor.");
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setMaterials(data);
+                    setError(null);
                 }
             })
-            .finally(() => setLoading(false));
+            .catch((err) => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    console.error("Erro ao buscar dados:", err);
+                    if (err.response?.status === 401) {
+                        setError("Sessão expirada. Por favor, autentique-se novamente.");
+                    } else {
+                        setError("Erro ao carregar matérias-primas do servidor.");
+                    }
+                }
+            })
+            .finally(() => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setLoading(false);
+                }
+            });
     }, [token]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchMaterials();
+        let isMounted = true;
+        if (isAuthenticated && token) {
+            fetchMaterials(() => isMounted);
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, fetchMaterials]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isAuthenticated, token, fetchMaterials]);
 
     const handleConfirmDelete = async () => {
         if (!deletingId) return;

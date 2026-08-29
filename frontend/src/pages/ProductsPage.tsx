@@ -23,32 +23,45 @@ export function ProductsPage() {
 
     const isAdmin = user?.role === "ROLE_ADMIN";
 
-    const fetchProducts = useCallback(() => {
+    const fetchProducts = useCallback((isCurrentMounted?: () => boolean) => {
         if (!token) return;
         setLoading(true);
         productService.getAll()
             .then((data) => {
-                setProducts(data);
-                setError(null);
-            })
-            .catch((err) => {
-                console.error("Erro ao carregar produtos:", err);
-                if (err.response?.status === 401) {
-                    setError("Sessão expirada. Por favor, autentique-se novamente.");
-                } else {
-                    setError("Erro ao carregar produtos do servidor.");
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setProducts(data);
+                    setError(null);
                 }
             })
-            .finally(() => setLoading(false));
+            .catch((err) => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    console.error("Erro ao carregar produtos:", err);
+                    if (err.response?.status === 401) {
+                        setError("Sessão expirada. Por favor, autentique-se novamente.");
+                    } else {
+                        setError("Erro ao carregar produtos do servidor.");
+                    }
+                }
+            })
+            .finally(() => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setLoading(false);
+                }
+            });
     }, [token]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchProducts();
+        let isMounted = true;
+        if (isAuthenticated && token) {
+            fetchProducts(() => isMounted);
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, fetchProducts]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isAuthenticated, token, fetchProducts]);
 
     const handleConfirmDelete = async () => {
         if (!deletingId) return;

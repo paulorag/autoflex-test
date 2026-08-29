@@ -11,32 +11,45 @@ export function ProductionOrdersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchOrders = useCallback(() => {
+    const fetchOrders = useCallback((isCurrentMounted?: () => boolean) => {
         if (!token) return;
         setLoading(true);
         productionOrderService.getAll()
             .then((data) => {
-                setOrders(data);
-                setError(null);
-            })
-            .catch((err) => {
-                console.error("Erro ao carregar ordens de produção:", err);
-                if (err.response?.status === 401) {
-                    setError("Sessão expirada. Por favor, faça login novamente.");
-                } else {
-                    setError("Erro ao carregar histórico de ordens de produção do servidor.");
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setOrders(data);
+                    setError(null);
                 }
             })
-            .finally(() => setLoading(false));
+            .catch((err) => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    console.error("Erro ao carregar ordens de produção:", err);
+                    if (err.response?.status === 401) {
+                        setError("Sessão expirada. Por favor, faça login novamente.");
+                    } else {
+                        setError("Erro ao carregar histórico de ordens de produção do servidor.");
+                    }
+                }
+            })
+            .finally(() => {
+                if (!isCurrentMounted || isCurrentMounted()) {
+                    setLoading(false);
+                }
+            });
     }, [token]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchOrders();
+        let isMounted = true;
+        if (isAuthenticated && token) {
+            fetchOrders(() => isMounted);
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, fetchOrders]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isAuthenticated, token, fetchOrders]);
 
     const formatDate = (dateStr: string) => {
         try {
@@ -144,7 +157,7 @@ export function ProductionOrdersPage() {
                     <Button
                         variant="outline-secondary"
                         className="d-flex align-items-center gap-1 btn-sm"
-                        onClick={fetchOrders}
+                        onClick={() => fetchOrders()}
                         disabled={loading}
                     >
                         <RefreshCw size={14} className={loading ? "spin" : ""} /> Atualizar

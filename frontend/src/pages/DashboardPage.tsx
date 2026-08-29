@@ -31,7 +31,7 @@ export function DashboardPage() {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [notification, setNotification] = useState<{ type: "success" | "danger" | "warning"; message: string } | null>(null);
 
-    const loadDashboardData = useCallback(async () => {
+    const loadDashboardData = useCallback(async (isCurrentMounted: () => boolean) => {
         if (!token) return;
         setLoading(true);
         try {
@@ -41,36 +41,47 @@ export function DashboardPage() {
                 planningService.getPlan(),
                 productionOrderService.getAll(),
             ]);
-            setMaterials(matsData);
-            setProducts(prodsData);
-            setPlan(planData);
-            setOrders(ordersData);
-            setNotification(null);
+            if (isCurrentMounted()) {
+                setMaterials(matsData);
+                setProducts(prodsData);
+                setPlan(planData);
+                setOrders(ordersData);
+                setNotification(null);
+            }
         } catch (err: any) {
-            console.error("Erro ao carregar dados do dashboard:", err);
-            if (err.response?.status === 401) {
-                setNotification({
-                    type: "warning",
-                    message: "Sessão expirada ou não autorizada. Faça login para acessar o painel.",
-                });
-            } else {
-                setNotification({
-                    type: "danger",
-                    message: "Erro ao conectar com a API do servidor.",
-                });
+            if (isCurrentMounted()) {
+                console.error("Erro ao carregar dados do dashboard:", err);
+                if (err.response?.status === 401) {
+                    setNotification({
+                        type: "warning",
+                        message: "Sessão expirada ou não autorizada. Faça login para acessar o painel.",
+                    });
+                } else {
+                    setNotification({
+                        type: "danger",
+                        message: "Erro ao conectar com a API do servidor.",
+                    });
+                }
             }
         } finally {
-            setLoading(false);
+            if (isCurrentMounted()) {
+                setLoading(false);
+            }
         }
     }, [token]);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            loadDashboardData();
+        let isMounted = true;
+        if (isAuthenticated && token) {
+            loadDashboardData(() => isMounted);
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, loadDashboardData]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isAuthenticated, token, loadDashboardData]);
 
     const handleExecutePlan = async () => {
         setExecuting(true);
@@ -81,7 +92,7 @@ export function DashboardPage() {
                 message: `⚡ Ordem #${executed.id} efetivada com sucesso! ${executed.totalItems} produtos fabricados com baixa imediata no estoque de insumos.`,
             });
             setShowConfirmModal(false);
-            loadDashboardData();
+            loadDashboardData(() => true);
         } catch (err: any) {
             console.error("Erro ao efetivar produção:", err);
             const msg = err.response?.data?.message || "Erro ao efetivar o plano de produção.";
@@ -128,8 +139,6 @@ export function DashboardPage() {
                 >
                     {notification.type === "success" ? (
                         <CheckCircle2 size={20} />
-                    ) : notification.type === "warning" ? (
-                        <AlertTriangle size={20} />
                     ) : (
                         <AlertTriangle size={20} />
                     )}
