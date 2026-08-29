@@ -1,8 +1,6 @@
 package com.autoflex.production.dto.request;
 
-import com.autoflex.production.domain.Role;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequestDTO(
@@ -16,8 +14,5 @@ public record RegisterRequestDTO(
 
         @NotBlank(message = "O nome completo é obrigatório")
         @Size(max = 150, message = "O nome completo deve ter no máximo 150 caracteres")
-        String name,
-
-        @NotNull(message = "O papel (Role) do usuário é obrigatório")
-        Role role
+        String name
 ) {}

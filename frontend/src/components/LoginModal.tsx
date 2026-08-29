@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Modal, Button, Form, Alert, Badge } from "react-bootstrap";
 import { LogIn, UserPlus, Shield, User, Lock, Key } from "lucide-react";
 import { authService } from "../services/authService";
-import type { UserRole } from "../types";
 
 interface LoginModalProps {
     show: boolean;
@@ -15,7 +14,6 @@ export function LoginModal({ show, onHide, onSuccess }: LoginModalProps) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
-    const [role, setRole] = useState<UserRole>("ROLE_OPERATOR");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -30,7 +28,6 @@ export function LoginModal({ show, onHide, onSuccess }: LoginModalProps) {
                     username,
                     password,
                     name,
-                    role,
                 });
                 // Auto login após cadastro
                 await authService.login({ username, password });
@@ -70,7 +67,7 @@ export function LoginModal({ show, onHide, onSuccess }: LoginModalProps) {
             <Modal.Header closeButton className="border-0 pb-0">
                 <Modal.Title className="d-flex align-items-center gap-2 fs-5">
                     <Shield className="text-primary" size={22} />
-                    {isRegistering ? "Criar Nova Conta de Acesso" : "Autenticação no Sistema"}
+                    {isRegistering ? "Criar Nova Conta de Operador" : "Autenticação no Sistema"}
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body className="pt-3">
@@ -131,26 +128,13 @@ export function LoginModal({ show, onHide, onSuccess }: LoginModalProps) {
                         </div>
                     </Form.Group>
 
-                    {isRegistering && (
-                        <Form.Group className="mb-3">
-                            <Form.Label className="small fw-semibold">Perfil de Acesso (Role)</Form.Label>
-                            <Form.Select
-                                value={role}
-                                onChange={(e) => setRole(e.target.value as UserRole)}
-                            >
-                                <option value="ROLE_OPERATOR">Operador (Visualização & Ordens)</option>
-                                <option value="ROLE_ADMIN">Administrador (Acesso Total & Cadastros)</option>
-                            </Form.Select>
-                        </Form.Group>
-                    )}
-
                     <div className="d-grid gap-2 mt-4">
                         <Button variant="primary" type="submit" disabled={loading}>
                             {loading ? (
                                 "Processando..."
                             ) : isRegistering ? (
                                 <>
-                                    <UserPlus size={16} className="me-1" /> Cadastrar e Entrar
+                                    <UserPlus size={16} className="me-1" /> Cadastrar como Operador e Entrar
                                 </>
                             ) : (
                                 <>

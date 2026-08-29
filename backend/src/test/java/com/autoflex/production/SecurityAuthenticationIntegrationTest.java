@@ -60,8 +60,7 @@ class SecurityAuthenticationIntegrationTest {
         RegisterRequestDTO registerRequest = new RegisterRequestDTO(
                 "novo_operador",
                 "senha123",
-                "Novo Operador Teste",
-                Role.ROLE_OPERATOR
+                "Novo Operador Teste"
         );
 
         mockMvc.perform(post("/api/auth/register")

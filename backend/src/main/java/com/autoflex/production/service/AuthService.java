@@ -62,7 +62,7 @@ public class AuthService {
                 .username(username)
                 .password(passwordEncoder.encode(request.password()))
                 .name(request.name().trim())
-                .role(request.role())
+                .role(com.autoflex.production.domain.Role.ROLE_OPERATOR)
                 .build();
 
         User savedUser = userRepository.save(user);

@@ -37,9 +37,9 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Cadastrar novo usuário", description = "Cadastra um novo usuário com papel ROLE_OPERATOR ou ROLE_ADMIN.")
+    @Operation(summary = "Cadastrar novo operador", description = "Cadastra um novo usuário no sistema com perfil padrão de Operador (ROLE_OPERATOR).")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
+            @ApiResponse(responseCode = "201", description = "Operador criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados de validação inválidos ou nome de usuário já existente")
     })
     @PostMapping("/register")
